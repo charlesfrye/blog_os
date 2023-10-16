@@ -7,8 +7,8 @@
 pub mod serial;
 pub mod vga_buffer;
 
-use core::panic::PanicInfo;
 use core::ops::Fn;
+use core::panic::PanicInfo;
 
 pub trait Testable {
     fn run(&self) -> ();
