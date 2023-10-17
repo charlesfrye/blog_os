@@ -49,6 +49,7 @@ const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 struct Buffer {
+    // volatile is used to prevent the compiler from optimizing away writes to the VGA buffer
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
@@ -120,8 +121,8 @@ impl fmt::Write for Writer {
     }
 }
 
-lazy_static! {
-    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
+lazy_static! { // lazy_static! macro is used to initialize the static WRITER instance at runtime instead of compile time
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer { // spinlock mutex for thread safety without assuming OS mutex support
         column_position: 0,
         color_code: ColorCode::new(Color::Yellow, Color::Black),
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
