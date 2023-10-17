@@ -37,7 +37,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    loop {} // prevent compiler from complaining that we're exiting from a diverging function
 }
 
 /// Entry point for `cargo test`
