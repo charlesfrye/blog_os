@@ -5,6 +5,7 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 
+pub mod gdt;
 pub mod interrupts;
 pub mod serial;
 pub mod vga_buffer;
@@ -13,6 +14,7 @@ use core::ops::Fn;
 use core::panic::PanicInfo;
 
 pub fn init() {
+    gdt::init();
     interrupts::init_idt();
 }
 
