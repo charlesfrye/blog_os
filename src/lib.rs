@@ -56,13 +56,19 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     init();
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     test_panic_handler(info)
+}
+
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -79,4 +85,5 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
         let mut port = Port::new(0xf4);
         port.write(exit_code as u32);
     }
+    hlt_loop();
 }
