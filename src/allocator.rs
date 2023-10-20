@@ -67,7 +67,10 @@ impl<A> Locked<A> {
     }
 }
 
-use linked_list::LinkedListAllocator;
+use fixed_size_block::FixedSizeBlockAllocator;
 
 #[global_allocator]
-static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
+static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(FixedSizeBlockAllocator::new());
+
+#[allow(unused_imports)]
+use linked_list::LinkedListAllocator;
