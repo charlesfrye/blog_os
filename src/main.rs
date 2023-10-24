@@ -5,6 +5,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 use blog_os::println;
+use blog_os::task::{simple_executor::SimpleExecutor, Task};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
@@ -27,6 +28,19 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+
+    async fn async_number() -> u32 {
+        42
+    }
+
+    async fn example_task() {
+        let number = async_number().await;
+        println!("async number: {}", number);
+    }
+
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.run();
 
     // allocate a number on the heap
     let heap_value = Box::new(41);
