@@ -15,7 +15,7 @@ impl Executor {
             tasks: BTreeMap::new(),
             // wakers push IDs of awoken tasks onto the queue
             task_queue: Arc::new(ArrayQueue::new(100)),
-            // no allocations here, because it's pushed from an interrupt handler
+            // no allocations here, because it's pushed to from an interrupt handler -- others are not
             // 100 is "small" for concurrent tasks, could be handled by distinct threads in Linux
             waker_cache: BTreeMap::new(),
         }
@@ -31,6 +31,7 @@ impl Executor {
         // interesting that this is a panic rather than an error --
         //  i guess because there is no return type?
         self.task_queue.push(task_id).expect("queue full");
+        // pushing to the queue ensures that the future _will_ be polled
     }
 }
 
@@ -42,7 +43,7 @@ struct TaskWaker {
 }
 impl TaskWaker {
     fn wake_task(&self) {
-        // no mut because ArrayQueue is atomic
+        // no mut self because ArrayQueue is atomic
         self.task_queue.push(self.task_id).expect("task_queue full");
     }
 }
@@ -61,10 +62,12 @@ impl Executor {
                 Some(task) => task,
                 None => continue, // task no longer exists
             };
-            let waker = waker_cache
-                .entry(task_id)
-                .or_insert_with(|| TaskWaker::new(task_id, task_queue.clone()));
-            // note: task_queue is an Arc, so .clone only increments the ref count
+            let waker = waker_cache.entry(task_id).or_insert_with(|| {
+                TaskWaker::new(
+                    task_id,
+                    task_queue.clone(), // waker has access to queue so we can push on wake
+                ) // note: task_queue is an Arc, so .clone only increments the ref count
+            });
             let mut context = Context::from_waker(waker);
             match task.poll(&mut context) {
                 Poll::Ready(()) => {
@@ -110,11 +113,11 @@ impl Executor {
     fn sleep_if_idle(&self) {
         use x86_64::instructions::interrupts::{self, enable_and_hlt};
 
-        interrupts::disable(); // prevent race condition with interrupts
+        interrupts::disable(); // prevent race condition with interrupts that mutate queue
         if self.task_queue.is_empty() {
-            enable_and_hlt(); // re-enable interrupts and halt
+            enable_and_hlt(); // re-enable interrupts and issue a halt, atomically
         } else {
-            interrupts::enable();
+            interrupts::enable(); // re-enable interrupts and return
         }
     }
 }

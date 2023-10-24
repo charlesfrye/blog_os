@@ -20,7 +20,7 @@ pub(crate) fn add_scancode(scancode: u8) {
         if let Err(_) = queue.push(scancode) {
             println!("WARNING: scancode queue full; dropping keyboard input");
         } else {
-            WAKER.wake();
+            WAKER.wake(); // this calls the parent task's .wake
         }
     } else {
         println!("WARNING: scancode queue uninitialized");
@@ -59,6 +59,7 @@ impl Stream for ScancodeStream {
             return Poll::Ready(Some(scancode));
         }
 
+        // overwrite our waker with the parent task's waker
         WAKER.register(&cx.waker());
         match queue.pop() {
             Ok(scancode) => {
@@ -78,7 +79,10 @@ pub async fn print_keypresses() {
     let mut scancodes = ScancodeStream::new();
     let mut keyboard = Keyboard::new(layouts::Us104Key, ScancodeSet1, HandleControl::Ignore);
 
-    while let Some(scancode) = scancodes.next().await {
+    while let Some(scancode) = scancodes.next(
+        // async/await sugar means parent context/waker automatically injected here
+    ).await
+    {
         if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
             if let Some(key) = keyboard.process_keyevent(key_event) {
                 match key {
