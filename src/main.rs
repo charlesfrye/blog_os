@@ -5,7 +5,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 use blog_os::println;
-use blog_os::task::{simple_executor::SimpleExecutor, Task};
+use blog_os::task::{executor::Executor, keyboard, Task};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
@@ -38,10 +38,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         println!("async number: {}", number);
     }
 
-    let mut executor = SimpleExecutor::new();
-    executor.spawn(Task::new(example_task()));
-    executor.run();
-
     // allocate a number on the heap
     let heap_value = Box::new(41);
     println!("heap_value at {:p}", heap_value);
@@ -60,6 +56,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         "current reference count is {}",
         Rc::strong_count(&cloned_reference)
     );
+    drop(reference_counted);
     println!(
         "reference count is {} now",
         Rc::strong_count(&cloned_reference)
@@ -69,8 +66,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     test_main();
 
     println!("It did not crash!");
-
-    blog_os::hlt_loop();
+    let mut executor = Executor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.run();
 }
 
 #[cfg(not(test))]
