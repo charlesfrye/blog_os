@@ -8,6 +8,7 @@ use core::panic::PanicInfo;
 
 use blog_os::println;
 
+#[allow(clippy::empty_loop)]
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn _start() -> ! {
     test_main();

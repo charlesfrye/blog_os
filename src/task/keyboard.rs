@@ -17,7 +17,7 @@ static WAKER: AtomicWaker = AtomicWaker::new();
 /// Instead, it spins -- I think around a compare-and-swap instruction?
 pub(crate) fn add_scancode(scancode: u8) {
     if let Ok(queue) = SCANCODE_QUEUE.try_get() {
-        if let Err(_) = queue.push(scancode) {
+        if queue.push(scancode).is_err() {
             println!("WARNING: scancode queue full; dropping keyboard input");
         } else {
             WAKER.wake(); // this calls the parent task's .wake
@@ -37,6 +37,12 @@ impl ScancodeStream {
             .try_init_once(|| ArrayQueue::new(100))
             .expect("ScancodeStream::new should only be called once");
         ScancodeStream { _private: () }
+    }
+}
+
+impl Default for ScancodeStream {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -61,7 +67,7 @@ impl Stream for ScancodeStream {
 
         // overwrite our waker with the parent task's waker
         // -- it's our duty if we return Poll::Pending
-        WAKER.register(&cx.waker());
+        WAKER.register(cx.waker());
         match queue.pop() {
             Ok(scancode) => {
                 // if interrupt pushed since we last checked

@@ -22,6 +22,12 @@ impl Executor {
     }
 }
 
+impl Default for Executor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Executor {
     pub fn spawn(&mut self, task: Task) {
         let task_id = task.id;
@@ -93,6 +99,7 @@ impl Wake for TaskWaker {
     }
 }
 
+#[allow(clippy::new_ret_no_self)] // unsure whether clippy or the code is wrong here
 impl TaskWaker {
     fn new(task_id: TaskId, task_queue: Arc<ArrayQueue<TaskId>>) -> Waker {
         Waker::from(Arc::new(TaskWaker {

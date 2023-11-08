@@ -86,6 +86,7 @@ fn panic(info: &PanicInfo) -> ! {
     blog_os::test_panic_handler(info)
 }
 
+#[allow(clippy::eq_op)]
 #[test_case]
 fn trivial_assertion() {
     assert_eq!(1, 1);

@@ -11,6 +11,7 @@ use core::panic::PanicInfo;
 
 entry_point!(main);
 
+#[allow(clippy::empty_loop)]
 fn main(boot_info: &'static BootInfo) -> ! {
     use blog_os::allocator;
     use blog_os::memory::{self, BootInfoFrameAllocator};

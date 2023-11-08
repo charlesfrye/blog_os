@@ -17,6 +17,13 @@ impl SimpleExecutor {
     }
 }
 
+impl Default for SimpleExecutor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+use core::ptr;
 use core::task::{RawWaker, RawWakerVTable, Waker};
 
 fn dummy_raw_waker() -> RawWaker {
@@ -26,10 +33,7 @@ fn dummy_raw_waker() -> RawWaker {
     }
 
     let vtable = &RawWakerVTable::new(clone, no_op, no_op, no_op);
-    RawWaker::new(
-        0 as *const (), // null pointer
-        vtable,
-    )
+    RawWaker::new(ptr::null(), vtable)
 }
 
 fn dummy_waker() -> Waker {
