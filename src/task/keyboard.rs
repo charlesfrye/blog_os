@@ -60,10 +60,12 @@ impl Stream for ScancodeStream {
         }
 
         // overwrite our waker with the parent task's waker
+        // -- it's our duty if we return Poll::Pending
         WAKER.register(&cx.waker());
         match queue.pop() {
             Ok(scancode) => {
-                WAKER.take();
+                // if interrupt pushed since we last checked
+                WAKER.take(); // nvm, we don't need that waker
                 Poll::Ready(Some(scancode))
             }
             Err(crossbeam_queue::PopError) => Poll::Pending,
